@@ -31,7 +31,6 @@ function ScreenHandler()
 
   self.switchScreen = function(self, screen) 
     if type(screen) == 'string' then
-      print(screen, self.names[screen])
       screen = self.names[screen]
     end
     local current = self.screens[self.current]
@@ -47,6 +46,14 @@ function ScreenHandler()
       self.current = screen
       if next.enter then next:enter() end
     end
+  end
+
+  self.onScreen = function(self, onscreen)
+    if type(onscreen) == 'string' then
+      onscreen = self.names[onscreen]
+    end
+    if self.current == onscreen then return true end
+    return false
   end
 
   self.draw = function(self)

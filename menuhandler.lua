@@ -8,13 +8,18 @@ module(..., package.seeall)
 require 'loader'
 require 'utils'
 
-function MenuHandler(menu)
+function MenuHandler(opts)
   assert(type(menu) == "table" or not menu, "Passed in menu must be a table of menu items, or nothing at all")
   self = {}
 
-  self.menu = menu or {}
+  self.menu = {}
 
   self.current = nil
+
+  self.opts = opts
+
+  if not self.opts.pos then self.opts.pos = {x=0,y=0} end
+  if not self.opts.spacing then self.opts.spacing = 20 end
 
   --
   -- Adds an item to the menu
@@ -99,32 +104,31 @@ function MenuHandler(menu)
   local outerSelf = self
 
   self.screen = {
+    name = "menu",
     enter = function(self) love.graphics.setColor(255, 255, 255, 255) end,
     draw = function(self)
+      if outerSelf.opts.font then
+        love.graphics.setFont(outerSelf.opts.font)
+      end
+
       local list = outerSelf.current.parent and outerSelf.current.parent.children or outerSelf.menu
       for i,menu_item in ipairs(list) do
-        local y = 10 * i + 10
-        love.graphics.print(menu_item.getDisplay(), 20, y)
+        local y = outerSelf.opts.spacing * (i-1) + 10
+        love.graphics.print(menu_item.getDisplay(), outerSelf.opts.pos.x, outerSelf.opts.pos.y + y)
         if menu_item == outerSelf.current then
-          love.graphics.print(">", 5, y)
+          love.graphics.print("-", outerSelf.opts.pos.x - 25, outerSelf.opts.pos.y + y)
         end
       end
     end,
 
     update = function(self, dt)
-    end,
-
-    keyhandle = function(self, keys, key)
-      if utils.isIn(keys.actions['up'], key) then
+      if self.keyhandler:check('menuup') then
         outerSelf:prevNode()
-      end
-      if utils.isIn(keys.actions['down'], key) then
+      elseif self.keyhandler:check('menudown') then
         outerSelf:nextNode()
-      end
-      if utils.isIn(keys.actions['left'], key) then
+      elseif self.keyhandler:check('menuexit') then
         outerSelf:parent()
-      end
-      if utils.isIn(keys.actions['menuenter'], key) then
+      elseif self.keyhandler:check('menuenter') then
         outerSelf:child()
       end
     end

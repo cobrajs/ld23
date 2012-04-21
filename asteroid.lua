@@ -21,23 +21,28 @@ function Asteroid(center)
 
   self.ang, self.dst = math.polar({x=x, y=y}, self.center)
 
+  self.rot = 0
+  self.rotate = true
+
   self.speed = 1
 
-  self.image = 1
+  self.image = math.random(3)
 
   self.grounded = false
 
-  self.circle = shapes.Circle(0, 0, 8)
+  self.circle = shapes.Circle(0, 0, love.graphics.getWidth() / 40)
 
   self.draw = function(self, images)
     --love.graphics.circle('fill', self.circle.x, self.circle.y, self.circle.r)
-    images:draw(self.circle.x, self.circle.y, self.image, math.rad(self.ang), 1, 1, self.circle.r, self.circle.r)
+    images:draw(self.circle.x, self.circle.y, self.image, math.rad(utils.wrap(self.rot + self.ang, 360)), 1, 1, self.circle.r, self.circle.r)
   end
 
   self.update = function(self, dt)
     if not self.grounded then
       self.dst = self.dst - self.speed
     end
+
+    if self.rotate then self.rot = utils.wrap(self.rot + 1, 360) end
 
     self:updateCircle()
   end
@@ -93,6 +98,7 @@ function AsteroidHandler(center, updateCallback)
         for _,a2 in ipairs(self.asteroids) do
           if a2 ~= asteroid then
             if shapes.Collides(asteroid.circle, a2.circle) then
+              asteroid.rotate = false
               asteroid:pushBack(a2.circle, asteroid.circle)
             end
           end

@@ -4,10 +4,7 @@
 --
 
 require 'vector'
-require 'camera'
-require 'loader'
 require 'utils'
-require 'tileset'
 require 'player'
 require 'keyhandler'
 require 'screenhandler'
@@ -16,154 +13,108 @@ require 'polar'
 require 'asteroid'
 require 'shapes'
 
+require 'logger'
+
 function love.load()
   WIDTH = love.graphics.getWidth()
   HEIGHT = love.graphics.getHeight()
-  center = vector.Vector:new(WIDTH/2,HEIGHT/2)
 
-  earf = {}
-  earf.image = utils.loadImage('earf_top.png')
-  earf.circle = shapes.Circle(center.x, center.y, earf.image:getWidth() / 2)
+  global = {}
 
-  -- camera = camera.Camera(WIDTH - map.width, HEIGHT - map.height)
+  global.center = vector.Vector:new(WIDTH/2,HEIGHT/2)
 
-  -- p = player.Player(0, 0)
+  global.earf = {}
+  global.earf.image = utils.loadImage('earf_top.png')
+  global.earf.circle = shapes.Circle(global.center.x, global.center.y, global.earf.image:getWidth() / 2)
 
-  -- love.keyboard.setKeyRepeat(0.1, 0.01)
+  global.keyhandle = keyhandler.KeyHandler()
 
-  asteroids = {}
-  table.insert(asteroids, asteroid.Asteroid(center))
+  global.spinlevel = 2
 
-  keyhandle = keyhandler.KeyHandler()
+  global.player = player.Player(global)
 
-  level = 1
+  global.logger = logger.Logger()
 
-  player = {
-    ang = 0, 
-    floor = earf.circle.r + 4, 
-    dst = earf.circle.r + 4, 
-    jump = 0, 
-    canJump = true,
-    topCircle = shapes.Circle(0, 0, 4),
-    drawCircle = shapes.Circle(0, 0, 4),
-    bottomCircle = shapes.Circle(0, 0, 4),
-    height = function(self) return self.dst - self.floor end,
-    updateCircles = function(self, center)
-      self.bottomCircle.x, self.bottomCircle.y = math.cartesian(self, center)
-      self.topCircle.x, self.topCircle.y = math.cartesian({dst = self.dst + self.bottomCircle.r * 2, ang = self.ang}, center)
-      self.drawCircle.x, self.drawCircle.y = math.cartesian({dst = self.dst + self.bottomCircle.r, ang = self.ang}, center)
-    end,
-    tileset = tileset.Tileset('spaceman.png', 8, 8)
-  }
+  global.font = love.graphics.newFont('gfx/SPACEMAN.TTF', 24)
+  love.graphics.setFont(global.font)
 
-  asteroids = asteroid.AsteroidHandler(center, function(self, dt)
-    --[[
-    if shapes.Collides(player.circle, self.circle) then
-      self:pushBack(player.circle) 
+  global.asteroids = asteroid.AsteroidHandler(global.center, function(self, dt)
+    if shapes.Collides(global.player.bottomCircle, self.circle) then
+      self:pushBack(global.player.bottomCircle) 
     end
-    --]]
 
-    if shapes.Collides(self.circle, earf.circle) then
+    if shapes.Collides(global.player.topCircle, self.circle) then
+      self:pushBack(global.player.topCircle) 
+    end
+
+    if shapes.Collides(self.circle, global.earf.circle) then
+      self.rotate = false
       self.grounded = true
-      self:pushBack(earf.circle)
+      self:pushBack(global.earf.circle)
     else
       self.grounded = false
-      self.ang = utils.wrap(self.ang + dt * level, 360)
+    end
+
+    if self.grounded then
+      self.ang = utils.wrap(self.ang + dt * global.spinlevel, 360)
     end
   end)
 
-  gravity = vector.Vector:new(0, 0.2) 
+  global.gravity = {ang = 0, dst = 0.5} 
 
   screens = screenhandler.ScreenHandler()
-  screens.keyhandler = keyhandle
+  screens.keyhandler = global.keyhandle
+  screens.font = global.font
   screens:addScreen({
     name = 'game',
     rotate = 0,
-    player = player,
-    -- camera = camera,
+    player = global.player,
+    shake = vector.Vector:new(0, 0),
+    enter = function(self) love.graphics.setBackgroundColor(10,10,10,255) end,
     draw = function(self)
-      self.player.tileset:draw(self.player.drawCircle.x, self.player.drawCircle.y, 1, math.rad(utils.wrap(self.player.ang + 90, 360)), 1, 1, 8, 8)
-      --love.graphics.circle('fill', self.player.topCircle.x, self.player.topCircle.y, self.player.topCircle.r)
-      --love.graphics.circle('fill', self.player.bottomCircle.x, self.player.bottomCircle.y, self.player.bottomCircle.r)
-      love.graphics.draw(earf.image, center.x, center.y, math.rad(self.rotate), 1, 1, earf.circle.r, earf.circle.r)
-      love.graphics.print(self.rotate, 10, 10)
+      -- love.graphics.translate(shake.x, shake.y)
+      love.graphics.draw(global.earf.image, global.center.x, global.center.y, math.rad(self.rotate), 1, 1, global.earf.circle.r, global.earf.circle.r)
 
-      asteroids:draw()
+      global.asteroids:draw()
 
-      -- p:draw(camera:drawPos(p.pos.x, p.pos.y))
+      self.player:draw()
+      --p:draw(camera:drawPos(p.pos.x, p.pos.y))
     end,
     update = function(self, dt)
-      self.rotate = utils.wrap(self.rotate + dt * level, 360)
+      global.logger:update('Rot', math.floor(self.rotate))
+
+      self.rotate = utils.wrap(self.rotate + dt * global.spinlevel, 360)
 
       -- Player Update
 
+      self.player:keyhandle(self.keyhandler)
       self.player:update(dt)
-      self.player:updateCircles(center)
-
-      if self.player.jump == 0 then
-        self.player.ang = utils.wrap(self.player.ang + dt * level, 360)
-      end
-
-      local doit = self.keyhandler:check('left')
-      if doit then
-        self.player.ang = utils.wrap(self.player.ang - 2, 360)
-      end
-      doit = self.keyhandler:check('right')
-      if doit then
-        self.player.ang = utils.wrap(self.player.ang + 2, 360)
-      end
-      doit = self.keyhandler:check('jump')
-      if doit and self.player.jump == 0 and self.player.canJump then
-        self.player.jump = self.player.jump + 20
-        self.player.canJump = false
-      end
-
-      if self.player.jump > 0 then
-        if self.player:height() < self.player.jump then
-          self.player.dst = self.player.dst + 1
-        else
-          -- self.player.jump = 0
-          if self.player:height() > self.player.jump then
-            local fall = true
-            for _,v in ipairs(asteroids.asteroids) do
-              if shapes.Collides(v.circle, self.player.circle) then 
-                self.player.canJump = true
-                fall = false
-              end
-            end
-            self.player.dst = self.player.dst - 0.5 * (fall and 1 or 0)
-          end
-        end
-      end
 
       -- Asteroids update
 
-      asteroids:update(dt)
+      global.asteroids:update(dt)
 
       doit = self.keyhandler:check('spawn')
-      if doit and doit > 0.5 then
-        asteroids:addAsteroid()
+      if doit and doit > 0.1 then
+        global.asteroids:addAsteroid()
         self.keyhandler:reset('spawn')
       end
 
       if self.keyhandler:check('uplevel') then
-        level = level + 1
+        global.spinlevel = global.spinlevel + 1
       end
-      -- p:update(dt)
-      -- p:collide(map:FindLayer('Collision'))
-
-      --p.vel:add(gravity)
     end
   })
 
   screens:addScreen({
     name = 'pause',
     capture = true,
+    enter = function(self) love.graphics.setBackgroundColor(0,0,0,255) end,
     draw = function(self)
-      love.graphics.setColor(50, 50, 50, 200)
-      love.graphics.rectangle('fill', center.x - 30, center.y - 10, 60, 20)
+      --love.graphics.setColor(50, 50, 50, 200)
+      --love.graphics.rectangle('fill', 40, HEIGHT - 50, 200, 40)
       love.graphics.setColor(255, 255, 255, 255)
-      love.graphics.print('PAUSED', center.x - 20, center.y - 5)
+      love.graphics.print('PAUSED', 50, HEIGHT - 50)
     end,
     update = function(self)
       doit = self.keyhandler:check('jump')
@@ -172,6 +123,18 @@ function love.load()
       end
     end
   })
+
+  global.menuhandler = menuhandler.MenuHandler({
+    spacing = 24,
+    pos = {x = 200, y = 200},
+    font = global.font
+  })
+  global.menuhandler:addItem('Start', function(self) screens:switchScreen('game') end)
+  global.menuhandler:addItem('Quit', function(self) love.event.push('quit') end)
+  screens:addScreen(global.menuhandler.screen)
+
+  screens:switchScreen('menu')
+
 end
 
 function love.update(dt)
@@ -181,13 +144,18 @@ end
 
 function love.draw()
   screens:draw()
+  global.logger:draw()
 end
 
 function love.keypressed(key, uni)
   screens.keyhandler:update(key, true)
 
   if screens.keyhandler:check('quit') then
-    love.event.push('quit')
+    if screens:onScreen('menu') then
+      love.event.push('quit')
+    else
+      screens:switchScreen('menu')
+    end
   end
 end
 
