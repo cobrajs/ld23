@@ -72,9 +72,8 @@ function love.load()
     end
   end)
 
-
-
   gravity = vector.Vector:new(0, 0.2) 
+
   screens = screenhandler.ScreenHandler()
   screens.keyhandler = keyhandle
   screens:addScreen({
@@ -98,6 +97,7 @@ function love.load()
 
       -- Player Update
 
+      self.player:update(dt)
       self.player:updateCircles(center)
 
       if self.player.jump == 0 then
@@ -158,13 +158,17 @@ function love.load()
 
   screens:addScreen({
     name = 'pause',
+    capture = true,
     draw = function(self)
+      love.graphics.setColor(50, 50, 50, 200)
+      love.graphics.rectangle('fill', center.x - 30, center.y - 10, 60, 20)
+      love.graphics.setColor(255, 255, 255, 255)
       love.graphics.print('PAUSED', center.x - 20, center.y - 5)
     end,
     update = function(self)
       doit = self.keyhandler:check('jump')
       if doit then
-        screens:switchScreen(1)
+        screens:switchScreen('game')
       end
     end
   })
@@ -193,7 +197,9 @@ end
 
 function love.focus(f)
   if not f then
-    screens:switchScreen(2)
+    screens:switchScreen('pause')
+  else
+    screens:switchScreen('game')
   end
 end
 

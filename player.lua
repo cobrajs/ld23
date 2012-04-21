@@ -5,18 +5,37 @@ require 'vector'
 require 'tileset'
 require 'shapes'
 
-function Player(startx, starty)
+    tileset = tileset.Tileset('spaceman.png', 8, 8)
+
+function Player(opts)
   local self = {}
-  -- Position vars
-  self.pos = vector.Vector:new(startx, starty)
-  self.vel = vector.Vector:new(0, 0)
+
+  self.floor = opts.earf.circle.r
+
+  -- Polar position vars
+  self.pos = {ang = 0, dst = self.floor}
+  self.vel = {ang = 0, dst = 0}
+
+  self.jump = 0
+  self.canJump = true
+
+  self.topCircle = shapes.Circle(0,0,4)
+  self.drawCircle = shapes.Circle(0,0,4)
+  self.bottomCircle = shapes.Circle(0,0,4)
+
+  self.height = function(self) return self.pos.dst - self.floor end
+  
+  self.updateCircles = function(self)
+    self.bottomCircle.x, self.bottomCircle.y = math.cartesian(self.pos, self.center)
+    self.topCircle.x, self.topCircle.y = math.cartesian({dst = self.pos.dst + self.bottomCircle.r * 2, ang = self.pos.ang}, center)
+    self.drawCircle.x, self.drawCircle.y = math.cartesian({dst = self.pos.dst + self.bottomCircle.r, ang = self.pos.ang}, center)
+  end
 
   -- Animation vars
   --self.image = tileset.Tileset('gfx/player.png', 2, 2)
   self.image = tileset.XMLTileset('gfx/player_tiles.xml')
   self.width = self.image.tilewidth
   self.height = self.image.tileheight
-  self.rect = shapes.Rect(self.pos.x, self.pos.y, self.width, self.height)
   self.animPos = 1
   self.animState = 0
   self.animDelay = 0
@@ -24,10 +43,8 @@ function Player(startx, starty)
 
   -- Key Handler
   self.keyhandle = {
-    left = vector.Vector:new(-0.5,0),
-    right = vector.Vector:new(0.5,0),
-    up = vector.Vector:new(0,-0.5),
-    down = vector.Vector:new(0,0.5)
+    left = {ang = -2, dst = 0},
+    right = {ang = 2, dst = 0}
   }
 
   self.update = function(self, dt)

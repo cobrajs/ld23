@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tileset tilesx="8" tilesy="8">
+  <image source="gfx/spaceman.png" width="128" height="128" />
+  <anims>
+    <anim name="stand" dir="left" start="1" end="1" />
+    <anim name="stand" dir="right" start="9" end="9" />
+    <anim name="walk" dir="left" start="2" end="5" />
+    <anim name="walk" dir="right" start="10" end="13" />
+  </anims>
+</tileset>
