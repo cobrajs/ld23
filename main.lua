@@ -245,9 +245,9 @@ function love.load()
     draw = function(self)
       love.graphics.setFont(global.font)
       love.graphics.setColor(255, 255, 255, 255)
-      love.graphics.print('Game Over', 50, HEIGHT - 50)
+      love.graphics.print('Game Over', 10, HEIGHT - global.font:getHeight() * 2.2)
       if self.delay <= 0 then
-        love.graphics.print('Hit enter to continue', 50, HEIGHT - 20)
+        love.graphics.print('Hit enter to continue', 10, HEIGHT - global.font:getHeight() * 1.1)
       end
     end,
     update = function(self, dt)
