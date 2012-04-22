@@ -9,10 +9,8 @@ function SpaceStation()
 
   self.offset = -100
 
-  self.orbitColor.r, self.orbitColor.g, self.orbitColor.b = unpack(color.grey.rgba)
-  self.orbitColor:update()
-  self.color.r, self.color.b = 0, 0
-  self.color:update()
+  self.orbitColor:set(unpack(color.grey.rgba))
+  self.color:set(0,nil,0)
 
   self.speed = 0.1
   self.size = 5

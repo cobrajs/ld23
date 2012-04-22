@@ -9,8 +9,8 @@ function Sun()
 
   self.offset = 0
 
-  self.color.b = 0
-  self.color:update()
+  self.orbitColor:set(unpack(color.grey.rgba))
+  self.color:set(nil,nil,0)
 
   self.flare = false
   self.flareLength = 0
@@ -52,9 +52,11 @@ function Sun()
     end
     if self.flareFade < 0 then self.flareFade = 0 end
     if self.flareFade > 100 then self.flareFade = 99 end
-    self.color.r = 255 * (self.flareFade/100 * 0.8 + 0.2)
-    self.color.g = 255 * (self.flareFade/100 * 0.8 + 0.2)
-    self.color:update()
+    self.color:set(
+      255 * (self.flareFade/100 * 0.8 + 0.2),
+      255 * (self.flareFade/100 * 0.8 + 0.2),
+      0
+    )
   end
 
   return self

@@ -1,5 +1,7 @@
 module(..., package.seeall)
 
+local order = {'r','g','b','a'}
+
 function Color(r, g, b, a)
   self = {}
 
@@ -10,6 +12,16 @@ function Color(r, g, b, a)
 
   self.rgba = {r, g, b, a}
   self.rgb = {r, g, b}
+
+  self.set = function(self, ...)
+    local args = {...}
+    for i=1,#args do
+      args[i] = args[i] or self[order[i]]
+      self.rgba[i] = args[i]
+      self.rgb[i] = args[i]
+      self[order[i]] = args[i]
+    end
+  end
 
   self.update = function(self)
     self.rgba[1] = self.r
