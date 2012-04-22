@@ -15,6 +15,7 @@ require 'shapes'
 require 'sun'
 require 'spacestation'
 require 'bullet'
+require 'city'
 
 require 'logger'
 
@@ -39,7 +40,7 @@ function love.load()
     --
     -- Difficulty setting
     --
-    self.spinlevel = 3
+    self.spinlevel = 5
     self.flareMaxTimer = 5
     self.flareTimer = self.flareMaxTimer
     self.asteroidMaxTimer = 2
@@ -55,6 +56,8 @@ function love.load()
       self.sun:init()
 
       self.spacestation:init()
+
+      self.cities:init()
     end
   end
 
@@ -111,6 +114,8 @@ function love.load()
 
   global.spacestation = spacestation.SpaceStation()
 
+  global.cities = city.CityHandler(global)
+
   global.gravity = {ang = 0, dst = 0.5} 
 
   global.backImage = utils.loadImage('title.png')
@@ -142,6 +147,7 @@ function love.load()
 
       global.sun:draw()
       global.spacestation:draw()
+      global.cities:draw()
 
       global.asteroids:draw()
 
@@ -176,17 +182,24 @@ function love.load()
       global.asteroidTimer = global.asteroidTimer - dt
       if global.asteroidTimer <= 0 then
         global.asteroidTimer = global.asteroidMaxTimer
-        global.asteroids:addAsteroid()
+        global.cities:addCity(
+          global.asteroids:addAsteroid()
+        )
       end
 
       -- Handle some debug keypresses
 
       if self.keyhandler:handle('spawn') then
-        global.asteroids:addAsteroid()
+        global.cities:addCity(
+          global.asteroids:addAsteroid()
+        )
       end
 
-      if self.keyhandler:check('uplevel') then
-        global.spinlevel = global.spinlevel + 1
+      if self.keyhandler:handle('uplevel') then
+        --global.spinlevel = global.spinlevel + 1
+        for _,v in ipairs(global.asteroids.asteroids) do
+          v:damage(1)
+        end
       end
 
       if self.keyhandler:handle('doflare') then
@@ -196,6 +209,7 @@ function love.load()
       -- Update other objects
       global.sun:update(dt)
       global.spacestation:update(dt)
+      global.cities:update(dt)
 
       -- Update bullets, run collisions
       global.bullets:update(dt)

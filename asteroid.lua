@@ -28,6 +28,15 @@ function Asteroid(center)
   self.speed = 1
 
   self.damageLevel = 0
+  self.destroyed = false
+
+  self.damage = function(self, amount)
+    print(self.damageLevel, amount)
+    self.damageLevel = self.damageLevel + amount
+    if self.damageLevel > 8 then
+      self.destroyed = true
+    end
+  end
 
   self.image = (math.random(3)-1) * 8 + 1
 
@@ -53,7 +62,7 @@ function Asteroid(center)
   self.draw = function(self, images)
     --love.graphics.circle('fill', self.circle.x, self.circle.y, self.circle.r)
     --love.graphics.draw(self.ps)
-    images:draw(self.circle.x, self.circle.y, self.image, math.rad(utils.wrap(self.rot + self.ang, 360)), 1, 1, self.circle.r, self.circle.r)
+    images:draw(self.circle.x, self.circle.y, self.image + math.floor(self.damageLevel / 3), math.rad(utils.wrap(self.rot + self.ang, 360)), 1, 1, self.circle.r, self.circle.r)
     self.circle:draw('line')
   end
 
@@ -115,7 +124,9 @@ function AsteroidHandler(center, updateCallback)
   end
 
   self.addAsteroid = function(self)
-    table.insert(self.asteroids, Asteroid(self.center))
+    local a = Asteroid(self.center)
+    table.insert(self.asteroids, a)
+    return a
   end
 
   self.draw = function(self)
@@ -126,7 +137,7 @@ function AsteroidHandler(center, updateCallback)
 
   self.update = function(self, dt)
     local ret = false
-    for _,asteroid in ipairs(self.asteroids) do
+    for i,asteroid in ipairs(self.asteroids) do
       asteroid:update(dt)
 
       if not asteroid.grounded then
@@ -149,6 +160,12 @@ function AsteroidHandler(center, updateCallback)
         self.asteroidhit:play()
       end
 
+      if asteroid.destroyed then
+        for _,a2 in ipairs(self.asteroids) do
+          a2.grounded = false
+        end
+        table.remove(self.asteroids, i)
+      end
     end
 
     return ret

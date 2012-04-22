@@ -57,6 +57,9 @@ function CollidesRectCircle(a, b)
 end
 
 function CollidesCircles(a, b)
-  return math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y, 2)) <= a.r + b.r
+  return Dist(a, b) <= a.r + b.r
 end
 
+function Dist(a, b)
+  return math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y,2))
+end

@@ -66,9 +66,11 @@ function Player(global)
     self.dir = 'right'
 
     -- Game state info
-    -- Percentage based health
     self.health = 100
+    self.air = 100
     self.collected = 0
+
+    self.punching = false
   end
 
   self:init()
@@ -96,6 +98,7 @@ function Player(global)
       self.jump > 0     and self.image.anims.jump or
       self.fall         and self.image.anims.fall or
       self.vel.ang ~= 0 and self.image.anims.walk or
+      self.punching     and self.image.anims.punch or
                             self.image.anims.stand,
       self.vel.ang ~= 0 and (self.vel.ang > 0 and 'right' or 'left') or self.dir
     )
@@ -157,7 +160,17 @@ function Player(global)
         self.vel.ang = 0
       end
       if shapes.Collides(v.circle, self.topCircle) and v.grounded == false then
-        self:damage(1000)
+        local ta = shapes.Dist(v.circle, self.topCircle)
+        local tb = shapes.Dist(self.topCircle, self.bottomCircle)
+        local ba = shapes.Dist(v.circle, self.bottomCircle)
+        local a = ba - tb
+        local ang = math.deg(math.asin(a/ta))
+        local top = math.cos(math.rad(ang))
+        if ang > 45 then
+          self:damage(1000)
+        else
+          self.pos.ang = self.pos.ang + top * (v.ang > self.pos.ang and -1 or 1)
+        end
       end
     end
 
@@ -175,6 +188,8 @@ function Player(global)
   -- Handle key presses
   --
   self.keyhandle = function(self, keyhandle)
+    self.punching = keyhandle:check('punch') and true or false
+
     if keyhandle:check('left') then
       self.vel.ang = self.vel.ang - (self:inAir() and 0.05 or 0.2)
     elseif keyhandle:check('right') then
