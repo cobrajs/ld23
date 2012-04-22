@@ -83,7 +83,7 @@ function love.load()
 
   global.music = love.audio.newSource('sounds/purple.ogg')
   global.music:setLooping(true)
-  global.music:start()
+  global.music:play()
 
   --
   -- Objects
