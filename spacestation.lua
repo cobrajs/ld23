@@ -18,13 +18,21 @@ function SpaceStation()
   self.speed = 0.1
   self.size = 5
 
-  self.rotate = 0
+  self.parentInit = self.init
+
+  self.init = function(self)
+    self:parentInit()
+
+    self.rotate = 0
+
+    self.hit = false
+    self.hitDelay = 0
+    self.hitFade = 0
+  end
+
+  self:init()
 
   self.circle = shapes.Circle(self.pos.x, self.pos.y, 25)
-
-  self.hit = false
-  self.hitDelay = 0
-  self.hitFade = 0
 
   self.image = tileset.Tileset('spacestation.png', 2, 2)
   self.imageOffset = {x = self.image.tilewidth / 2, y = self.image.tileheight / 2}

@@ -10,6 +10,14 @@ function Orbiter()
   self.polPos = {ang = 0, dst = 0}
   self.pos = vector.Vector:new(0, 0)
 
+  self.init = function(self)
+    self.polPos.ang = 0
+    self.polPos.dst = 0
+    self.pos.x = 0
+    self.pos.y = 0
+    self:updateOrbit()
+  end
+
   self.offset = -100
 
   self.center = vector.Vector:new(love.graphics.getWidth() / 2, love.graphics.getHeight() / 2)

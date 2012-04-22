@@ -10,11 +10,6 @@ function Player(global)
 
   self.global = global
   
-  -- Jump state vars
-  self.jump = 0
-  self.fall = false
-  self.canJump = true
-
   self.floor = global.earf.circle.r
 
   self.height = function(self) return self.pos.dst - self.floor end
@@ -23,7 +18,7 @@ function Player(global)
   -- Polar position vars
   self.pos = {ang = 0, dst = self.floor}
   self.vel = {ang = 0, dst = 0}
-  
+
   -- Collision circles
   self.topCircle = shapes.Circle(0,0,love.graphics.getWidth()/80)
   self.drawCircle = shapes.Circle(0,0,love.graphics.getWidth()/80)
@@ -37,11 +32,6 @@ function Player(global)
 
   -- Animation vars
   self.image = tileset.XMLTileset('gfx/player_tiles.xml')
-  self.animPos = 1
-  self.animState = 0
-  self.animDelay = 0
-  self.anim = self.image.anims.stand
-  self.dir = 'right'
 
   self.changeAnim = function(self, newAnim, newDir)
     if newAnim == self.anim and newDir == self.dir then return end
@@ -51,10 +41,37 @@ function Player(global)
     self.animState = 0
   end
 
-  -- Game state info
-  -- Percentage based health
-  self.health = 100
-  self.collected = 0
+  
+  -- Put some vars in here to restart the game easier
+  self.init = function(self)
+    -- Jump state vars
+    self.jump = 0
+    self.fall = false
+    self.canJump = true
+
+    -- Polar position setting
+    self.pos.ang = 0
+    self.pos.dst = self.floor
+
+    self.vel.ang = 0
+    self.vel.dst = 0
+
+    self:updateCircles()
+
+    -- Anim vars
+    self.animPos = 1
+    self.animState = 0
+    self.animDelay = 0
+    self.anim = self.image.anims.stand
+    self.dir = 'right'
+
+    -- Game state info
+    -- Percentage based health
+    self.health = 100
+    self.collected = 0
+  end
+
+  self:init()
 
   -- Sounds
   self.hitsound = love.audio.newSource('sounds/ow.ogg')
@@ -65,7 +82,7 @@ function Player(global)
     self.health = self.health - amount
     love.audio.play(self.hitsound)
     if self.health <= 0 then
-      print("LOOSE")
+      global:lose()
     end
   end
 
@@ -135,9 +152,12 @@ function Player(global)
     self.pos.dst = self.pos.dst + self.vel.dst
 
     for _,v in ipairs(global.asteroids.asteroids) do
-      if shapes.Collides(v.circle, self.bottomCircle) or shapes.Collides(v.circle, self.topCircle) then 
+      if shapes.Collides(v.circle, self.bottomCircle) then 
         self.pos.ang = utils.wrapAng(self.pos.ang - self.vel.ang * 2)
         self.vel.ang = 0
+      end
+      if shapes.Collides(v.circle, self.topCircle) and v.grounded == false then
+        self:damage(1000)
       end
     end
 
@@ -147,6 +167,8 @@ function Player(global)
 
   self.draw = function(self, x, y)
     self.image:draw(self.drawCircle.x, self.drawCircle.y, self.animPos + self.animState, math.rad(utils.wrap(self.pos.ang + 90, 360)), 1, 1, self.drawCircle.r * 2, self.drawCircle.r * 2)
+    self.topCircle:draw('line')
+    self.bottomCircle:draw('line')
   end
 
   --

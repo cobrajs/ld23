@@ -50,6 +50,13 @@ function BulletHandler()
 
   self.shothit = love.audio.newSource('sounds/shothit.ogg', 'static')
 
+  self.init = function(self)
+    for i=1,#self.bullets do
+      table.remove(self.bullets)
+    end
+    self.shothit:stop()
+  end
+
   self.draw = function(self)
     for _,v in ipairs(self.bullets) do
       v:draw()

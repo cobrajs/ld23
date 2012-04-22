@@ -12,12 +12,20 @@ function Sun()
   self.orbitColor:set(unpack(color.grey.rgba))
   self.color:set(nil,nil,0)
 
-  self.flare = false
-  self.flareLength = 0
-  self.flareFade = 0
   self.flareBullets = nil
-  self.flareBulletType = 1
   self.flareSound = love.audio.newSource('sounds/sunshot.ogg', 'static')
+
+  self.parentInit = self.init
+
+  self.init = function(self)
+    self:parentInit()
+    self.flare = false
+    self.flareLength = 0
+    self.flareFade = 0
+    self.flareBulletType = 1
+  end
+
+  self:init()
 
   self.speed = 0.2
   self.size = 40

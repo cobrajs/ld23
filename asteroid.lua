@@ -27,6 +27,8 @@ function Asteroid(center)
 
   self.speed = 1
 
+  self.damageLevel = 0
+
   self.image = (math.random(3)-1) * 8 + 1
 
   self.grounded = false
@@ -52,6 +54,7 @@ function Asteroid(center)
     --love.graphics.circle('fill', self.circle.x, self.circle.y, self.circle.r)
     --love.graphics.draw(self.ps)
     images:draw(self.circle.x, self.circle.y, self.image, math.rad(utils.wrap(self.rot + self.ang, 360)), 1, 1, self.circle.r, self.circle.r)
+    self.circle:draw('line')
   end
 
   self.update = function(self, dt)
@@ -103,6 +106,13 @@ function AsteroidHandler(center, updateCallback)
   self.images = tileset.Tileset('asteroids.png', 8, 8)
 
   self.asteroidhit = love.audio.newSource('sounds/asteroidhit.ogg')
+
+  self.init = function(self)
+    for i=1,#self.asteroids do
+      table.remove(self.asteroids)
+    end
+    self.asteroidhit:stop()
+  end
 
   self.addAsteroid = function(self)
     table.insert(self.asteroids, Asteroid(self.center))

@@ -33,14 +33,36 @@ function love.load()
 
   global.keyhandle = keyhandler.KeyHandler()
 
-  --
-  -- Difficulty setting
-  --
-  global.spinlevel = 3
-  global.flareMaxTimer = 5
-  global.flareTimer = global.flareMaxTimer
-  global.asteroidMaxTimer = 2
-  global.asteroidTimer = global.asteroidMaxTimer
+  global.init = function(self, objects)
+    -- Init all game vars, and call inits on objects
+
+    --
+    -- Difficulty setting
+    --
+    self.spinlevel = 3
+    self.flareMaxTimer = 5
+    self.flareTimer = self.flareMaxTimer
+    self.asteroidMaxTimer = 2
+    self.asteroidTimer = self.asteroidMaxTimer
+
+    if objects then
+      self.player:init()
+
+      self.bullets:init()
+
+      self.asteroids:init()
+
+      self.sun:init()
+
+      self.spacestation:init()
+    end
+  end
+
+  global:init()
+
+  global.lose = function(self)
+    screens:switchScreen('lose')
+  end
 
   --
   -- Debug logger
@@ -93,6 +115,8 @@ function love.load()
 
   global.backImage = utils.loadImage('title.png')
 
+  global.started = false
+
   --
   -- Screens!
   --
@@ -104,7 +128,10 @@ function love.load()
     name = 'game',
     rotate = 0,
     player = global.player,
-    enter = function(self) love.graphics.setBackgroundColor(10,10,10,255) end,
+    enter = function(self) 
+      love.graphics.setBackgroundColor(10,10,10,255) 
+      global.started = true
+    end,
     draw = function(self)
       if global.earf.shake > 0 then
         love.graphics.translate(math.cartesian({ang=math.random(360), dst=global.earf.shake}))
@@ -201,9 +228,35 @@ function love.load()
       love.graphics.print('PAUSED', 50, HEIGHT - 50)
     end,
     update = function(self)
-      doit = self.keyhandler:check('jump')
-      if doit then
+      if self.keyhandler:check('jump') then
         screens:switchScreen('game')
+      end
+    end
+  })
+
+  screens:addScreen({
+    name = 'lose',
+    capture = true,
+    delay = 2,
+    enter = function(self) 
+      self.delay = 2
+      love.graphics.setBackgroundColor(0,0,0,255) 
+    end,
+    draw = function(self)
+      love.graphics.setFont(global.font)
+      love.graphics.setColor(255, 255, 255, 255)
+      love.graphics.print('Game Over', 50, HEIGHT - 50)
+      if self.delay <= 0 then
+        love.graphics.print('Hit enter to continue', 50, HEIGHT - 20)
+      end
+    end,
+    update = function(self, dt)
+      self.delay = self.delay - dt
+      if self.delay <= 0 then
+        if self.keyhandler:handle('menuenter') then
+          screens:switchScreen('menu')
+          global:init()
+        end
       end
     end
   })
@@ -237,7 +290,8 @@ function love.load()
     },
     pos = global.center.y,
     padding = 24,
-    scrollSpeed = 30,
+    scrollSpeed = 40,
+    enter = function(self) self.pos = global.center.y end,
     draw = function(self)
       love.graphics.setFont(global.font)
       for i,v in ipairs(self.lines) do
@@ -274,7 +328,8 @@ function love.load()
     font = global.font,
     backImage = global.backImage
   })
-  global.menuhandler:addItem('Start', function(self) screens:switchScreen('game') end)
+  global.menuhandler:addItem('Start', function(self) if global.started then global:init(true) end screens:switchScreen('game') end)
+  global.menuhandler:addItem('Resume', function(self) if global.started then screens:switchScreen('game') end end)
   global.menuhandler:addItem('Options')
   global.menuhandler:addItem('Help', function(self) screens:switchScreen('help') end)
   global.menuhandler:addItem('Credits', function(self) screens:switchScreen('credits') end)
