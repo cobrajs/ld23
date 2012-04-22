@@ -54,12 +54,13 @@ function Orbiter()
   self.draw = function(self)
     love.graphics.setColor(color.white.rgba)
     love.graphics.draw(self.orbit, 0, 0)
-    love.graphics.setColor(self.color.rgba)
-    love.graphics.circle('fill', self.pos.x, self.pos.y, self.size)
-    love.graphics.setColor(color.white.rgba)
     if self.drawCallback then
-      self:drawCallback(dt)
+      self:drawCallback()
+    else
+      love.graphics.setColor(self.color.rgba)
+      love.graphics.circle('fill', self.pos.x, self.pos.y, self.size)
     end
+    love.graphics.setColor(color.white.rgba)
   end
 
   return self

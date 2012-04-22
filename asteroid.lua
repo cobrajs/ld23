@@ -129,5 +129,15 @@ function AsteroidHandler(center, updateCallback)
     end
   end
 
+  self.collide = function(self, object)
+    local ret = nil
+    for i,v in ipairs(self.asteroids) do
+      if shapes.Collides(v.circle, object.circle or object) then
+        ret = (ret or 0) + 1
+      end
+    end
+    return ret
+  end
+
   return self
 end

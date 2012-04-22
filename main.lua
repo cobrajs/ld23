@@ -118,7 +118,7 @@ function love.load()
       end
 
       if self.keyhandler:handle('doflare') then
-        global.sun:doFlare(global.bullets)
+        global.sun:startFlare(global.bullets)
       end
 
       -- Update other objects
@@ -133,6 +133,10 @@ function love.load()
         ((global.bullets:collide(self.player.topCircle) or 0) +
         (global.bullets:collide(self.player.bottomCircle) or 0)) * 20
       if damage > 0 then self.player:damage(damage) end
+
+      if global.bullets:collide(global.spacestation.circle) then
+        global.spacestation:doHit()
+      end
 
       global.logger:update('Bullets', #global.bullets.bullets)
     end

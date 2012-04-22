@@ -17,17 +17,26 @@ function Sun()
   self.flareFade = 0
   self.flareBullets = nil
   self.flareBulletType = 1
+  self.flareSound = love.audio.newSource('sounds/sunshot.ogg', 'static')
 
-  self.speed = 0.3
+  self.speed = 0.2
   self.size = 40
 
   self:updateOrbit()
 
-  self.doFlare = function(self, bullets)
+  self.startFlare = function(self, bullets)
     self.flare = true
     self.flareLength = 1
     self.flareFade = self.flareFade + 1
     self.flareBullets = bullets
+  end
+
+  self.launchFlare = function(self)
+    for i=1,359,2 do 
+      self.flareBullets:add(self.pos.x + math.cos(math.rad(i)) * self.size, self.pos.y + math.sin(math.rad(i)) * self.size, i, 2)
+    end
+    love.audio.stop(self.flareSound)
+    love.audio.play(self.flareSound)
   end
 
   self.updateCallback = function(self, dt)
@@ -39,9 +48,7 @@ function Sun()
         self.flareFade = self.flareFade - 1
       end
       if self.flareFade == 97 then
-        for i=0,360,5 do 
-          self.flareBullets:add(self.pos.x, self.pos.y, i, 2)
-        end
+        self:launchFlare()
       end
     end
 
