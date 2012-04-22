@@ -4,10 +4,6 @@ Implement Cities
   City will show up when an asteroid is headed towards it
   Run over and hold collect button to get it
 
-Actor and script system
-  An actor gets a script, and executes commands from the script when asked
-  
-
 
 Stuff to Fix
   Super jump off an asteroid

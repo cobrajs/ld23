@@ -10,5 +10,7 @@
     <anim name="jump" dir="left" start="14" end="14" />
     <anim name="fall" dir="right" start="7" end="7" />
     <anim name="fall" dir="left" start="15" end="15" />
+    <anim name="punch" dir="right" start="17" end="18" />
+    <anim name="punch" dir="left" start="25" end="26" />
   </anims>
 </tileset>

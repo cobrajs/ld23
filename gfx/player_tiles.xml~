@@ -8,7 +8,7 @@
     <anim name="walk" dir="left" start="10" end="13" />
     <anim name="jump" dir="right" start="6" end="6" />
     <anim name="jump" dir="left" start="14" end="14" />
-    <anim name="fall" dir="right" start="15" end="15" />
+    <anim name="fall" dir="right" start="7" end="7" />
     <anim name="fall" dir="left" start="15" end="15" />
   </anims>
 </tileset>
