@@ -81,6 +81,10 @@ function love.load()
   global.smallFont = love.graphics.newFont('gfx/SPACEMAN.TTF', 12)
   love.graphics.setFont(global.font)
 
+  global.music = love.audio.newSource('sounds/purple.ogg')
+  global.music:setLooping(true)
+  global.music:play()
+
   --
   -- Objects
   --
