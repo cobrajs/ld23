@@ -63,3 +63,7 @@ end
 function Dist(a, b)
   return math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y,2))
 end
+
+function InCircle(circle, point)
+  return Dist(circle, point) <= circle.r
+end

@@ -31,9 +31,8 @@ function Asteroid(center)
   self.destroyed = false
 
   self.damage = function(self, amount)
-    print(self.damageLevel, amount)
     self.damageLevel = self.damageLevel + amount
-    if self.damageLevel > 8 then
+    if self.damageLevel > 2 then
       self.destroyed = true
     end
   end
@@ -62,8 +61,8 @@ function Asteroid(center)
   self.draw = function(self, images)
     --love.graphics.circle('fill', self.circle.x, self.circle.y, self.circle.r)
     --love.graphics.draw(self.ps)
-    images:draw(self.circle.x, self.circle.y, self.image + math.floor(self.damageLevel / 3), math.rad(utils.wrap(self.rot + self.ang, 360)), 1, 1, self.circle.r, self.circle.r)
-    self.circle:draw('line')
+    images:draw(self.circle.x, self.circle.y, self.image + self.damageLevel, math.rad(utils.wrap(self.rot + self.ang, 360)), 1, 1, self.circle.r, self.circle.r)
+    --self.circle:draw('line')
   end
 
   self.update = function(self, dt)

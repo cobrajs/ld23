@@ -8,8 +8,7 @@ function City(asteroid, offset)
 
   self.image = utils.loadImage('city.png')
 
-  print(asteroid.dst, offset, (asteroid.dst / asteroid.speed * offset))
-  self.pos = {ang = asteroid.ang + (asteroid.dst / asteroid.speed * offset) , dst = 0}
+  self.pos = {ang = asteroid.ang - (asteroid.dst / asteroid.speed * offset) , dst = 0}
 
   self.circle = shapes.Circle(0, 0, 16)
 

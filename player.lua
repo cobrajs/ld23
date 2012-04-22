@@ -67,10 +67,13 @@ function Player(global)
 
     -- Game state info
     self.health = 100
+    self.healthDecTo = 100
     self.air = 100
+    self.airDecTo = 100
     self.collected = 0
+    self.score = 0
 
-    self.punching = false
+    self.punching = 0
   end
 
   self:init()
@@ -79,11 +82,13 @@ function Player(global)
   self.hitsound = love.audio.newSource('sounds/ow.ogg')
   self.jumpsound = love.audio.newSource('sounds/jetpack.ogg')
   self.walksound = love.audio.newSource('sounds/walk.ogg')
+  self.rescuesound = love.audio.newSource('sounds/rescue.ogg')
+  self.punchsound = love.audio.newSource('sounds/punch.ogg')
 
   self.damage = function(self, amount)
-    self.health = self.health - amount
+    self.healthDecTo = self.health - amount
     love.audio.play(self.hitsound)
-    if self.health <= 0 then
+    if self.healthDecTo <= 0 then
       global:lose()
     end
   end
@@ -98,9 +103,11 @@ function Player(global)
       self.jump > 0     and self.image.anims.jump or
       self.fall         and self.image.anims.fall or
       self.vel.ang ~= 0 and self.image.anims.walk or
-      self.punching     and self.image.anims.punch or
+      self.punching > 0 and self.image.anims.punch or
                             self.image.anims.stand,
-      self.vel.ang ~= 0 and (self.vel.ang > 0 and 'right' or 'left') or self.dir
+      self.dir
+      --self.vel.ang ~= 0 and (self.vel.ang > 0 and 'right' or 'left') or self.dir
+      
     )
 
     if self.vel.ang ~= 0 then
@@ -153,8 +160,21 @@ function Player(global)
     -- Add velocity to position
     self.pos.ang = utils.wrapAng(self.pos.ang + self.vel.ang)
     self.pos.dst = self.pos.dst + self.vel.dst
+    self:updateCircles()
+
+    if self.punching > 0 then
+      self.punchOffset = {}
+      self.punchOffset.x, self.punchOffset.y = math.cartesian({ang = self.pos.ang + (self.dir == 'left' and -8 or 8), dst = self.pos.dst + 12}, self.global.center)
+      self.punchCircle = shapes.Circle(self.punchOffset.x, self.punchOffset.y, 10)
+      self.punching = self.punching - dt
+    end
 
     for _,v in ipairs(global.asteroids.asteroids) do
+      if self.punching > 0 then
+        if shapes.Collides(v.circle, self.punchCircle) then
+          v:damage(1)
+        end
+      end
       if shapes.Collides(v.circle, self.bottomCircle) then 
         self.pos.ang = utils.wrapAng(self.pos.ang - self.vel.ang * 2)
         self.vel.ang = 0
@@ -175,25 +195,80 @@ function Player(global)
     end
 
     self:updateCircles()
+
+    for i,city in ipairs(self.global.cities.cities) do
+      if shapes.Collides(self.bottomCircle, city.circle) then
+        self.collected = self.collected + 1
+        self.rescuesound:play()
+        table.remove(self.global.cities.cities, i)
+      end
+    end
+
+    if self.healthDecTo ~= self.health then
+      self.health = self.health - (self.health - self.healthDecTo) / 10
+    end
+
+    self.air = self.air - dt
+
+    if self.air <= 0 then
+      self:damage(1000)
+    end
+
+    self.global.logger:update('Collect', self.collected)
+    self.global.logger:update('Air', self.air)
     self.global.logger:update('Health', self.health)
   end
 
   self.draw = function(self, x, y)
+    -- Draw player
     self.image:draw(self.drawCircle.x, self.drawCircle.y, self.animPos + self.animState, math.rad(utils.wrap(self.pos.ang + 90, 360)), 1, 1, self.drawCircle.r * 2, self.drawCircle.r * 2)
-    self.topCircle:draw('line')
-    self.bottomCircle:draw('line')
+
+    -- Draw stats
+
+    --[[
+    love.graphics.setLine(2, 'rough')
+    love.graphics.setColor(255,100,100,255)
+    love.graphics.rectangle('fill', 10, 10, 100 * self.health / 100, 30)
+    love.graphics.setColor(255,255,255,255)
+    love.graphics.rectangle('line', 10, 10, 100, 30)
+    love.graphics.setColor(100,100,255,255)
+    love.graphics.rectangle('fill', 10, 45, 100 * self.air / 100, 30)
+    love.graphics.setColor(255,255,255,255)
+    love.graphics.rectangle('line', 10, 45, 100, 30)
+    love.graphics.setLine(2, 'smooth')
+    --]]
+    love.graphics.setFont(self.global.smallFont)
+    love.graphics.print('Health: '..math.floor(self.health), 10, 10)
+    love.graphics.print('Air: '..math.floor(self.air), 10, self.global.smallFont:getHeight() + 10)
+    love.graphics.print('Saved: '..self.collected, 10, self.global.smallFont:getHeight() * 2 + 10)
+    love.graphics.print('Score: '..self.score, 10, self.global.smallFont:getHeight() * 3 + 10)
+
+    if self.global.debug then
+      self.topCircle:draw('line', {100,100,100,100})
+      self.bottomCircle:draw('line', {100,100,100,100})
+      if self.punchCircle and self.punching > 0 then
+        self.punchCircle:draw('line')
+      end
+    end
   end
 
   --
   -- Handle key presses
   --
   self.keyhandle = function(self, keyhandle)
-    self.punching = keyhandle:check('punch') and true or false
+    if keyhandle:handle('punch') then
+      self.punchsound:play()
+      self.punching = 0.1 
+    else
+      self.punching = 0
+    end
 
     if keyhandle:check('left') then
       self.vel.ang = self.vel.ang - (self:inAir() and 0.05 or 0.2)
+      self:changeAnim(self.anim, 'left')
     elseif keyhandle:check('right') then
       self.vel.ang = self.vel.ang + (self:inAir() and 0.05 or 0.2)
+      self:changeAnim(self.anim, 'right')
     else
       if self.vel.ang > 0.5 then
         self.vel.ang = self.vel.ang - (self:inAir() and 0.1 or 1)

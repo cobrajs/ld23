@@ -25,6 +25,8 @@ function love.load()
 
   global = {}
 
+  global.debug = false
+
   global.center = vector.Vector:new(WIDTH/2,HEIGHT/2)
 
   global.earf = {}
@@ -41,9 +43,11 @@ function love.load()
     -- Difficulty setting
     --
     self.spinlevel = 5
-    self.flareMaxTimer = 5
+    self.flareMaxTimer = 8
+    self.flareMaxTimerDec = 5
     self.flareTimer = self.flareMaxTimer
-    self.asteroidMaxTimer = 2
+    self.asteroidMaxTimer = 3
+    self.asteroidMaxTimerDec = 5
     self.asteroidTimer = self.asteroidMaxTimer
 
     if objects then
@@ -74,6 +78,7 @@ function love.load()
   global.logger = logger.Logger()
 
   global.font = love.graphics.newFont('gfx/SPACEMAN.TTF', 24)
+  global.smallFont = love.graphics.newFont('gfx/SPACEMAN.TTF', 12)
   love.graphics.setFont(global.font)
 
   --
@@ -102,6 +107,12 @@ function love.load()
       self:pushBack(global.earf.circle)
       global.earf.shake = 3
       ret = true
+      local tempCircle = shapes.Circle(self.circle.x, self.circle.y, self.circle.r * 2)
+      for i,city in ipairs(global.cities.cities) do
+        if shapes.Collides(city.circle, tempCircle) then
+          table.remove(global.cities.cities, i)
+        end
+      end
     end
 
     if self.grounded then
@@ -176,15 +187,25 @@ function love.load()
       global.flareTimer = global.flareTimer - dt
       if global.flareTimer <= 0 then
         global.flareTimer = global.flareMaxTimer
+        global.flareMaxTimer = global.flareMaxTimer - dt * global.flareMaxTimerDec
         global.sun:startFlare(global.bullets)
       end
 
       global.asteroidTimer = global.asteroidTimer - dt
       if global.asteroidTimer <= 0 then
         global.asteroidTimer = global.asteroidMaxTimer
+        global.asteroidMaxTimer = global.asteroidMaxTimer - dt * global.asteroidMaxTimerDec
         global.cities:addCity(
           global.asteroids:addAsteroid()
         )
+        local t = global.cities.cities[#global.cities.cities]
+        local tempCircle = shapes.Circle(t.circle.x, t.circle.y, t.circle.r * 2)
+        for _,asteroid in ipairs(global.asteroids.asteroids) do
+          if shapes.Collides(asteroid.circle, t.circle) then
+            table.remove(global.cities.cities)
+            break
+          end
+        end
       end
 
       -- Handle some debug keypresses
@@ -193,6 +214,13 @@ function love.load()
         global.cities:addCity(
           global.asteroids:addAsteroid()
         )
+        local t = global.cities.cities[#global.cities.cities]
+        for _,asteroid in ipairs(global.asteroids.asteroids) do
+          if shapes.Collides(asteroid.circle, t.circle) then
+            table.remove(global.cities.cities)
+            break
+          end
+        end
       end
 
       if self.keyhandler:handle('uplevel') then
@@ -277,7 +305,23 @@ function love.load()
 
   screens:addScreen({
     name = 'help',
+    lines = {
+      'Keys','Arrows to move','x to jump','c to punch','q for menu',
+      '','Dodge the sun flares','','Dodge the asteroids','',
+      'Save those in danger','','Jump to space station','to get more air','',
+      'But only if you have','saved some cities first'
+    },
+    pos = 10,
+    padding = 24,
     draw = function(self)
+      love.graphics.setFont(global.font)
+      for i,v in ipairs(self.lines) do
+        local y = self.pos + (i-1) * self.padding
+        if y > 0 then
+          local offset = global.font:getWidth(v)
+          love.graphics.print(v, global.center.x - offset / 2, self.pos + (i-1) * self.padding)
+        end
+      end
     end,
     update = function(self, dt)
     end
@@ -338,13 +382,13 @@ function love.load()
 
   global.menuhandler = menuhandler.MenuHandler({
     spacing = 24,
-    pos = {x = 100, y = 200},
+    pos = {x = 100, y = 220},
     font = global.font,
     backImage = global.backImage
   })
   global.menuhandler:addItem('Start', function(self) if global.started then global:init(true) end screens:switchScreen('game') end)
   global.menuhandler:addItem('Resume', function(self) if global.started then screens:switchScreen('game') end end)
-  global.menuhandler:addItem('Options')
+  --global.menuhandler:addItem('Options')
   global.menuhandler:addItem('Help', function(self) screens:switchScreen('help') end)
   global.menuhandler:addItem('Credits', function(self) screens:switchScreen('credits') end)
   global.menuhandler:addItem('Quit', function(self) love.event.push('quit') end)
@@ -361,7 +405,10 @@ end
 
 function love.draw()
   screens:draw()
-  global.logger:draw()
+
+  if global.debug then
+    global.logger:draw()
+  end
 end
 
 function love.keypressed(key, uni)
