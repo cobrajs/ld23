@@ -47,7 +47,7 @@ function love.load()
     self.flareMaxTimerDec = 5
     self.flareTimer = self.flareMaxTimer
     self.asteroidMaxTimer = 3
-    self.asteroidMaxTimerDec = 5
+    self.asteroidMaxTimerDec = 1
     self.asteroidTimer = self.asteroidMaxTimer
 
     if objects then
@@ -78,12 +78,12 @@ function love.load()
   global.logger = logger.Logger()
 
   global.font = love.graphics.newFont('gfx/SPACEMAN.TTF', 24)
-  global.smallFont = love.graphics.newFont('gfx/SPACEMAN.TTF', 12)
+  global.smallFont = love.graphics.newFont('gfx/FreeMono.ttf', 16)
   love.graphics.setFont(global.font)
 
   global.music = love.audio.newSource('sounds/purple.ogg')
   global.music:setLooping(true)
-  global.music:play()
+  global.music:start()
 
   --
   -- Objects
@@ -214,28 +214,30 @@ function love.load()
 
       -- Handle some debug keypresses
 
-      if self.keyhandler:handle('spawn') then
-        global.cities:addCity(
-          global.asteroids:addAsteroid()
-        )
-        local t = global.cities.cities[#global.cities.cities]
-        for _,asteroid in ipairs(global.asteroids.asteroids) do
-          if shapes.Collides(asteroid.circle, t.circle) then
-            table.remove(global.cities.cities)
-            break
+      if global.debug then
+        if self.keyhandler:handle('spawn') then
+          global.cities:addCity(
+            global.asteroids:addAsteroid()
+          )
+          local t = global.cities.cities[#global.cities.cities]
+          for _,asteroid in ipairs(global.asteroids.asteroids) do
+            if shapes.Collides(asteroid.circle, t.circle) then
+              table.remove(global.cities.cities)
+              break
+            end
           end
         end
-      end
 
-      if self.keyhandler:handle('uplevel') then
-        --global.spinlevel = global.spinlevel + 1
-        for _,v in ipairs(global.asteroids.asteroids) do
-          v:damage(1)
+        if self.keyhandler:handle('uplevel') then
+          --global.spinlevel = global.spinlevel + 1
+          for _,v in ipairs(global.asteroids.asteroids) do
+            v:damage(1)
+          end
         end
-      end
 
-      if self.keyhandler:handle('doflare') then
-        global.sun:startFlare(global.bullets)
+        if self.keyhandler:handle('doflare') then
+          global.sun:startFlare(global.bullets)
+        end
       end
 
       -- Update other objects

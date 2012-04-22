@@ -34,7 +34,9 @@ function Asteroid(center)
     self.damageLevel = self.damageLevel + amount
     if self.damageLevel > 2 then
       self.destroyed = true
+      return true
     end
+    return false
   end
 
   self.image = (math.random(3)-1) * 8 + 1

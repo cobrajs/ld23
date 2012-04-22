@@ -14,6 +14,22 @@ function Player(global)
 
   self.height = function(self) return self.pos.dst - self.floor end
   self.inAir = function(self) return self.jump > 0 or self.fall end
+  self.canJumpSet = function(self)
+    self.canJump = false
+    if self.jump > 0 then return end
+    if self.height == 0 then 
+      self.canJump = true 
+      return
+    end
+    local testOffsetX, testOffsetY = math.cartesian({ang = self.pos.ang, dst = self.pos.dst - 3}, self.global.center)
+    local testCircle = shapes.Circle(testOffsetX, testOffsetY, self.bottomCircle.r)
+    for _,v in ipairs(self.global.asteroids.asteroids) do
+      if shapes.Collides(testCircle, v.circle) then
+        self.canJump = true
+        return
+      end
+    end
+  end
 
   -- Polar position vars
   self.pos = {ang = 0, dst = self.floor}
@@ -124,27 +140,32 @@ function Player(global)
       self.pos.ang = self.pos.ang + dt * self.global.spinlevel
     end
 
-    if self.fall and self:height() <= 0 then
-      self.vel.dst = 0
-      self.pos.dst = self.floor
-      self.fall = false
-      self.jump = 0
-      self.canJump = true
-    end
-
-    if self:height() > 0 then
-      self.fall = true
-      self.canJump = false
-      for _,v in ipairs(global.asteroids.asteroids) do
-        if shapes.Collides(v.circle, self.bottomCircle) then 
-          self.pos.dst = self.pos.dst - self.vel.dst
-          self.canJump = true
+    if self.jump > 0 then
+      self.jump = self.jump - 1
+      self.vel.dst = 2
+      if self.jump <= 0 then
+        self.fall = true
+      end
+    else
+      if self:inAir() or self:height() > 0 then
+        self:canJumpSet()
+        if not self.canJump then
+          self.fall = true
+        else
           self.fall = false
         end
+        self.vel.dst = -1 * (self.fall and 1 or 0)
+        if self:height() <= 0 then
+          self.vel.dst = 0
+          self.canJump = true
+          self.jump = 0
+          self.fall = false
+          self.pos.dst = self.floor
+        end
       end
-      self.vel.dst = -0.5 * (self.fall and 1 or 0)
     end
 
+    --[[
     if self.jump > 0 then
       if self:height() < self.jump then
         self.vel.dst = 2
@@ -156,6 +177,26 @@ function Player(global)
         end
       end
     end
+
+    if self:height() <= 0 and self.fall then
+      self.vel.dst = 0
+      self.pos.dst = self.floor
+      self.fall = false
+      self.jump = 0
+      self.canJump = true
+    end
+
+    if self:height() > 0 then
+      self:canJumpSet()
+      if not self.canJump and self.jump <= 0 then
+        self.fall = true
+      else
+        self.fall = false
+      end
+
+      self.vel.dst = -0.5 * (self.fall and 1 or 0)
+    end
+    --]]
 
     -- Add velocity to position
     self.pos.ang = utils.wrapAng(self.pos.ang + self.vel.ang)
@@ -172,21 +213,23 @@ function Player(global)
     for _,v in ipairs(global.asteroids.asteroids) do
       if self.punching > 0 then
         if shapes.Collides(v.circle, self.punchCircle) then
-          v:damage(1)
+          if v:damage(1) then
+            self.score = self.score + 20
+          end
         end
       end
       if shapes.Collides(v.circle, self.bottomCircle) then 
         self.pos.ang = utils.wrapAng(self.pos.ang - self.vel.ang * 2)
         self.vel.ang = 0
       end
-      if shapes.Collides(v.circle, self.topCircle) and v.grounded == false then
+      if shapes.Collides(v.circle, self.topCircle) then
         local ta = shapes.Dist(v.circle, self.topCircle)
         local tb = shapes.Dist(self.topCircle, self.bottomCircle)
         local ba = shapes.Dist(v.circle, self.bottomCircle)
         local a = ba - tb
         local ang = math.deg(math.asin(a/ta))
         local top = math.cos(math.rad(ang))
-        if ang > 45 then
+        if ang > 45 and v.grounded == false then
           self:damage(1000)
         else
           self.pos.ang = self.pos.ang + top * (v.ang > self.pos.ang and -1 or 1)
@@ -204,11 +247,20 @@ function Player(global)
       end
     end
 
+    if shapes.Collides(self.global.spacestation.circle, self.drawCircle) then
+      self.score = self.score + self.collected * 10
+      self.air = math.min(self.air + self.collected * 20, 100)
+      self.health = math.min(self.health + self.collected * 10, 100)
+      self.collected = 0
+    end
+
     if self.healthDecTo ~= self.health then
       self.health = self.health - (self.health - self.healthDecTo) / 10
     end
 
     self.air = self.air - dt
+
+    self.score = self.score + dt
 
     if self.air <= 0 then
       self:damage(1000)
@@ -237,11 +289,12 @@ function Player(global)
     love.graphics.rectangle('line', 10, 45, 100, 30)
     love.graphics.setLine(2, 'smooth')
     --]]
+
     love.graphics.setFont(self.global.smallFont)
     love.graphics.print('Health: '..math.floor(self.health), 10, 10)
     love.graphics.print('Air: '..math.floor(self.air), 10, self.global.smallFont:getHeight() + 10)
     love.graphics.print('Saved: '..self.collected, 10, self.global.smallFont:getHeight() * 2 + 10)
-    love.graphics.print('Score: '..self.score, 10, self.global.smallFont:getHeight() * 3 + 10)
+    love.graphics.print('Score: '..math.floor(self.score), 10, self.global.smallFont:getHeight() * 3 + 10)
 
     if self.global.debug then
       self.topCircle:draw('line', {100,100,100,100})
@@ -288,7 +341,7 @@ function Player(global)
     end
 
     if keyhandle:check('jump') and self.canJump then
-      self.jump = self.jump + self.drawCircle.r * 5
+      self.jump = self.jump + self.drawCircle.r * 4
       self.canJump = false
       love.audio.play(self.jumpsound)
     end
