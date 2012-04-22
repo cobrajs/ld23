@@ -56,8 +56,14 @@ function Player(global)
   self.health = 100
   self.collected = 0
 
+  -- Sounds
+  self.hitsound = love.audio.newSource('sounds/ow.ogg')
+  self.jumpsound = love.audio.newSource('sounds/jetpack.ogg')
+  self.walksound = love.audio.newSource('sounds/walk.ogg')
+
   self.damage = function(self, amount)
     self.health = self.health - amount
+    love.audio.play(self.hitsound)
     if self.health <= 0 then
       print("LOOSE")
     end
@@ -104,6 +110,7 @@ function Player(global)
       self.canJump = false
       for _,v in ipairs(global.asteroids.asteroids) do
         if shapes.Collides(v.circle, self.bottomCircle) then 
+          self.pos.dst = self.pos.dst - self.vel.dst
           self.canJump = true
           self.fall = false
         end
@@ -118,13 +125,21 @@ function Player(global)
         self.jump = 0
         if self:height() > self.jump then
           self.fall = true
+          love.audio.stop(self.jumpsound)
         end
       end
     end
 
     -- Add velocity to position
-    self.pos.ang = utils.wrap(self.pos.ang + self.vel.ang, 360)
+    self.pos.ang = utils.wrapAng(self.pos.ang + self.vel.ang)
     self.pos.dst = self.pos.dst + self.vel.dst
+
+    for _,v in ipairs(global.asteroids.asteroids) do
+      if shapes.Collides(v.circle, self.bottomCircle) or shapes.Collides(v.circle, self.topCircle) then 
+        self.pos.ang = utils.wrapAng(self.pos.ang - self.vel.ang * 2)
+        self.vel.ang = 0
+      end
+    end
 
     self:updateCircles()
     self.global.logger:update('Health', self.health)
@@ -154,9 +169,16 @@ function Player(global)
 
     self.vel.ang = utils.clamp(-2, self.vel.ang, 2)
 
+    if math.abs(self.vel.ang) > 0 and not self:inAir() then
+      love.audio.play(self.walksound)
+    else
+      love.audio.stop(self.walksound)
+    end
+
     if keyhandle:check('jump') and self.canJump then
       self.jump = self.jump + self.drawCircle.r * 5
       self.canJump = false
+      love.audio.play(self.jumpsound)
     end
   end
 

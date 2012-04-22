@@ -27,7 +27,7 @@ function Asteroid(center)
 
   self.speed = 1
 
-  self.image = math.random(3)
+  self.image = (math.random(3)-1) * 8 + 1
 
   self.grounded = false
 
@@ -71,6 +71,8 @@ function Asteroid(center)
     self.circle.x, self.circle.y = math.cartesian(self, self.center)
   end
 
+  self:updateCircle()
+
   self.pushBack = function(self, circle)
     if not circle then
       self.dst = self.dst + self.speed
@@ -100,6 +102,8 @@ function AsteroidHandler(center, updateCallback)
 
   self.images = tileset.Tileset('asteroids.png', 8, 8)
 
+  self.asteroidhit = love.audio.newSource('sounds/asteroidhit.ogg')
+
   self.addAsteroid = function(self)
     table.insert(self.asteroids, Asteroid(self.center))
   end
@@ -111,22 +115,33 @@ function AsteroidHandler(center, updateCallback)
   end
 
   self.update = function(self, dt)
+    local ret = false
     for _,asteroid in ipairs(self.asteroids) do
       asteroid:update(dt)
 
       if not asteroid.grounded then
         for _,a2 in ipairs(self.asteroids) do
-          if a2 ~= asteroid then
+          if a2 ~= asteroid and a2.grounded then
             if shapes.Collides(asteroid.circle, a2.circle) then
               asteroid.rotate = false
-              asteroid:pushBack(a2.circle, asteroid.circle)
+              asteroid.grounded = true
+              ret = true
+              if not self.asteroidhit:isStopped() then self.asteroidhit:stop() end
+              self.asteroidhit:play()
+              --asteroid:pushBack(a2.circle, asteroid.circle)
             end
           end
         end
       end
 
-      self.updateCallback(asteroid, dt)
+      if self.updateCallback(asteroid, dt) then
+        if not self.asteroidhit:isStopped() then self.asteroidhit:stop() end
+        self.asteroidhit:play()
+      end
+
     end
+
+    return ret
   end
 
   self.collide = function(self, object)

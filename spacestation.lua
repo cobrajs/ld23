@@ -26,7 +26,7 @@ function SpaceStation()
   self.hitDelay = 0
   self.hitFade = 0
 
-  self.image = tileset.Tileset('spacestation.png', 4, 4)
+  self.image = tileset.Tileset('spacestation.png', 2, 2)
   self.imageOffset = {x = self.image.tilewidth / 2, y = self.image.tileheight / 2}
 
   self.doHit = function(self)

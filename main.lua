@@ -29,21 +29,39 @@ function love.load()
   global.earf = {}
   global.earf.image = utils.loadImage('earf_top.png')
   global.earf.circle = shapes.Circle(global.center.x, global.center.y, global.earf.image:getWidth() / 2)
+  global.earf.shake = 0
 
   global.keyhandle = keyhandler.KeyHandler()
 
-  global.spinlevel = 2
+  --
+  -- Difficulty setting
+  --
+  global.spinlevel = 3
+  global.flareMaxTimer = 5
+  global.flareTimer = global.flareMaxTimer
+  global.asteroidMaxTimer = 2
+  global.asteroidTimer = global.asteroidMaxTimer
 
-  global.player = player.Player(global)
+  --
+  -- Debug logger
+  --
 
   global.logger = logger.Logger()
 
   global.font = love.graphics.newFont('gfx/SPACEMAN.TTF', 24)
   love.graphics.setFont(global.font)
 
+  --
+  -- Objects
+  --
+
+  global.player = player.Player(global)
+
   global.bullets = bullet.BulletHandler()
 
   global.asteroids = asteroid.AsteroidHandler(global.center, function(self, dt)
+    local ret = false
+    --[[
     if shapes.Collides(global.player.bottomCircle, self.circle) then
       self:pushBack(global.player.bottomCircle) 
     end
@@ -51,18 +69,20 @@ function love.load()
     if shapes.Collides(global.player.topCircle, self.circle) then
       self:pushBack(global.player.topCircle) 
     end
+    --]]
 
-    if shapes.Collides(self.circle, global.earf.circle) then
+    if shapes.Collides(self.circle, global.earf.circle) and not self.grounded then
       self.rotate = false
       self.grounded = true
       self:pushBack(global.earf.circle)
-    else
-      self.grounded = false
+      global.earf.shake = 3
+      ret = true
     end
 
     if self.grounded then
       self.ang = utils.wrap(self.ang + dt * global.spinlevel, 360)
     end
+    return ret
   end)
 
   global.sun = sun.Sun()
@@ -71,6 +91,12 @@ function love.load()
 
   global.gravity = {ang = 0, dst = 0.5} 
 
+  global.backImage = utils.loadImage('title.png')
+
+  --
+  -- Screens!
+  --
+
   screens = screenhandler.ScreenHandler()
   screens.keyhandler = global.keyhandle
   screens.font = global.font
@@ -78,18 +104,22 @@ function love.load()
     name = 'game',
     rotate = 0,
     player = global.player,
-    shake = vector.Vector:new(0, 0),
     enter = function(self) love.graphics.setBackgroundColor(10,10,10,255) end,
     draw = function(self)
-      -- love.graphics.translate(shake.x, shake.y)
+      if global.earf.shake > 0 then
+        love.graphics.translate(math.cartesian({ang=math.random(360), dst=global.earf.shake}))
+        global.earf.shake = global.earf.shake - 0.5
+      end
+
       love.graphics.draw(global.earf.image, global.center.x, global.center.y, math.rad(self.rotate), 1, 1, global.earf.circle.r, global.earf.circle.r)
+
+      global.sun:draw()
+      global.spacestation:draw()
 
       global.asteroids:draw()
 
       self.player:draw()
 
-      global.sun:draw()
-      global.spacestation:draw()
       global.bullets:draw()
     end,
     update = function(self, dt)
@@ -104,13 +134,28 @@ function love.load()
 
       -- Asteroids update
 
-      global.asteroids:update(dt)
+      if global.asteroids:update(dt) then
+        global.earf.shake = 3
+      end
+
+      -- Timer events
+
+      global.flareTimer = global.flareTimer - dt
+      if global.flareTimer <= 0 then
+        global.flareTimer = global.flareMaxTimer
+        global.sun:startFlare(global.bullets)
+      end
+
+      global.asteroidTimer = global.asteroidTimer - dt
+      if global.asteroidTimer <= 0 then
+        global.asteroidTimer = global.asteroidMaxTimer
+        global.asteroids:addAsteroid()
+      end
 
       -- Handle some debug keypresses
 
       if self.keyhandler:handle('spawn') then
         global.asteroids:addAsteroid()
-        self.keyhandler:reset('spawn')
       end
 
       if self.keyhandler:check('uplevel') then
@@ -138,6 +183,10 @@ function love.load()
         global.spacestation:doHit()
       end
 
+      for _,asteroid in ipairs(global.asteroids.asteroids) do
+        global.bullets:collide(asteroid)
+      end
+
       global.logger:update('Bullets', #global.bullets.bullets)
     end
   })
@@ -148,8 +197,6 @@ function love.load()
     enter = function(self) love.graphics.setBackgroundColor(0,0,0,255) end,
     draw = function(self)
       love.graphics.setFont(global.font)
-      --love.graphics.setColor(50, 50, 50, 200)
-      --love.graphics.rectangle('fill', 40, HEIGHT - 50, 200, 40)
       love.graphics.setColor(255, 255, 255, 255)
       love.graphics.print('PAUSED', 50, HEIGHT - 50)
     end,
@@ -171,16 +218,61 @@ function love.load()
 
   screens:addScreen({
     name = 'credits',
+    lines = {
+      'Earf Defender','','by','','Allen Schmidt','cobrajs',
+      '','','Made in 48 hours','For Ludum Dare 23','','April 2012',
+      '','','Written using','Love2D and Lua','My Custom libraries','',
+      'Graphics done with','Aseprite','','Sounds done with','AS3sfxr',
+      'Audacity','','Other tools','VIM','Github','','','To contact me',
+      'cobrasoft@gmail.com','','','End of text.','','','Really, it is',
+      '','','Are you still here?','','','Go play another game','','',
+      'Fine, stay here.','','',"I'm just ignoring you now",'','',"I think I'll go for a walk",
+      '','',"I'm walking away now",'','','...','','',"You can't be serious",
+      '','','Hmm... ok.','','','Want to hear a secret?','','',
+      'I really wanted to be a', 'different game.', '','Something more platformy',
+      '','What?','',"No, this isn't platformy",'',"It's something else",'',
+      'A non-platformer','','Cause I said so','','',"I'm just wasting time now",'',
+      'I should stop adding to this','','Because I have more left','to add to the game.','',
+      'But this is more fun','','','Ok, fine.','',"I'm ending this.",'','','','','The End'
+    },
+    pos = global.center.y,
+    padding = 24,
+    scrollSpeed = 30,
     draw = function(self)
+      love.graphics.setFont(global.font)
+      for i,v in ipairs(self.lines) do
+        local y = self.pos + (i-1) * self.padding
+        if y > 0 then
+          local offset = global.font:getWidth(v)
+          love.graphics.print(v, global.center.x - offset / 2, self.pos + (i-1) * self.padding)
+        end
+      end
     end,
     update = function(self, dt)
+      self.pos = self.pos - dt * self.scrollSpeed
+    end
+  })
+
+  screens:addScreen({
+    name = 'title',
+    delay = 2,
+    image = global.backImage,
+    draw = function(self)
+      love.graphics.draw(self.image, 0, 0)
+    end,
+    update = function(self, dt)
+      self.delay = self.delay - dt
+      if self.delay <= 0 then
+        screens:switchScreen('menu')
+      end
     end
   })
 
   global.menuhandler = menuhandler.MenuHandler({
     spacing = 24,
-    pos = {x = 200, y = 200},
-    font = global.font
+    pos = {x = 100, y = 200},
+    font = global.font,
+    backImage = global.backImage
   })
   global.menuhandler:addItem('Start', function(self) screens:switchScreen('game') end)
   global.menuhandler:addItem('Options')

@@ -48,6 +48,8 @@ function BulletHandler()
 
   self.bullets = {}
 
+  self.shothit = love.audio.newSource('sounds/shothit.ogg', 'static')
+
   self.draw = function(self)
     for _,v in ipairs(self.bullets) do
       v:draw()
@@ -65,6 +67,7 @@ function BulletHandler()
     for i,v in ipairs(self.bullets) do
       if shapes.Collides(v.circle, object.circle or object) then
         table.remove(self.bullets, i)
+        love.audio.play(self.shothit)
         ret = (ret or 0) + 1
       end
     end

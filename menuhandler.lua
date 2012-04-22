@@ -106,6 +106,10 @@ function MenuHandler(opts)
     name = "menu",
     enter = function(self) love.graphics.setColor(255, 255, 255, 255) end,
     draw = function(self)
+      if outerSelf.opts.backImage then
+        love.graphics.draw(outerSelf.opts.backImage, 0, 0)
+      end
+
       if outerSelf.opts.font then
         love.graphics.setFont(outerSelf.opts.font)
       end
