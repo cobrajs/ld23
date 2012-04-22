@@ -82,6 +82,10 @@ function wrap(number, max)
   return number > max and number - max or number < 0 and number + max or number
 end
 
+function wrapAng(number)
+  return wrap(number, 360)
+end
+
 --
 -- Restrict a number between a min and max
 --

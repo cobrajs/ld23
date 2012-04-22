@@ -12,6 +12,8 @@ require 'menuhandler'
 require 'polar'
 require 'asteroid'
 require 'shapes'
+require 'sun'
+require 'spacestation'
 
 require 'logger'
 
@@ -60,6 +62,10 @@ function love.load()
     end
   end)
 
+  global.sun = sun.Sun()
+
+  global.spacestation = spacestation.SpaceStation()
+
   global.gravity = {ang = 0, dst = 0.5} 
 
   screens = screenhandler.ScreenHandler()
@@ -72,13 +78,15 @@ function love.load()
     shake = vector.Vector:new(0, 0),
     enter = function(self) love.graphics.setBackgroundColor(10,10,10,255) end,
     draw = function(self)
-      -- love.graphics.translate(shake.x, shake.y)
+      -- love.graphics.translate(shake.x, shake.y)
       love.graphics.draw(global.earf.image, global.center.x, global.center.y, math.rad(self.rotate), 1, 1, global.earf.circle.r, global.earf.circle.r)
 
       global.asteroids:draw()
 
       self.player:draw()
-      --p:draw(camera:drawPos(p.pos.x, p.pos.y))
+
+      global.sun:draw()
+      global.spacestation:draw()
     end,
     update = function(self, dt)
       global.logger:update('Rot', math.floor(self.rotate))
@@ -94,8 +102,7 @@ function love.load()
 
       global.asteroids:update(dt)
 
-      doit = self.keyhandler:check('spawn')
-      if doit and doit > 0.1 then
+      if self.keyhandler:handle('spawn') then
         global.asteroids:addAsteroid()
         self.keyhandler:reset('spawn')
       end
@@ -103,6 +110,13 @@ function love.load()
       if self.keyhandler:check('uplevel') then
         global.spinlevel = global.spinlevel + 1
       end
+
+      if self.keyhandler:handle('doflare') then
+        global.sun:doFlare()
+      end
+
+      global.sun:update(dt)
+      global.spacestation:update(dt)
     end
   })
 
@@ -111,6 +125,7 @@ function love.load()
     capture = true,
     enter = function(self) love.graphics.setBackgroundColor(0,0,0,255) end,
     draw = function(self)
+      love.graphics.setFont(global.font)
       --love.graphics.setColor(50, 50, 50, 200)
       --love.graphics.rectangle('fill', 40, HEIGHT - 50, 200, 40)
       love.graphics.setColor(255, 255, 255, 255)
@@ -164,10 +179,12 @@ function love.keyreleased(key, uni)
 end
 
 function love.focus(f)
-  if not f then
-    screens:switchScreen('pause')
-  else
-    screens:switchScreen('game')
+  if screens:onScreen('game') or screens:onScreen('pause') then
+    if not f then
+      screens:switchScreen('pause')
+    else
+      screens:switchScreen('game')
+    end
   end
 end
 

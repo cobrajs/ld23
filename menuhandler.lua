@@ -122,13 +122,13 @@ function MenuHandler(opts)
     end,
 
     update = function(self, dt)
-      if self.keyhandler:check('menuup') then
+      if self.keyhandler:handle('menuup') then
         outerSelf:prevNode()
-      elseif self.keyhandler:check('menudown') then
+      elseif self.keyhandler:handle('menudown') then
         outerSelf:nextNode()
-      elseif self.keyhandler:check('menuexit') then
+      elseif self.keyhandler:handle('menuexit') then
         outerSelf:parent()
-      elseif self.keyhandler:check('menuenter') then
+      elseif self.keyhandler:handle('menuenter') then
         outerSelf:child()
       end
     end

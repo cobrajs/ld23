@@ -20,5 +20,6 @@ addKey('menuup', 'up')
 addKey('menudown', 'down')
 addKey('menuenter', 'return')
 addKey('menuenter', 'right')
+addKey('menuenter', ' ')
 addKey('menuexit', 'left')
-
+addKey('doflare', 'f')

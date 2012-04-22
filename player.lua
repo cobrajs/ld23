@@ -8,25 +8,27 @@ require 'shapes'
 function Player(global)
   local self = {}
 
-  self.floor = global.earf.circle.r
-
-  -- Polar position vars
-  self.pos = {ang = 0, dst = self.floor}
-  self.vel = {ang = 0, dst = 0}
-
+  self.global = global
+  
+  -- Jump state vars
   self.jump = 0
   self.fall = false
   self.canJump = true
 
+  self.floor = global.earf.circle.r
+
+  self.height = function(self) return self.pos.dst - self.floor end
+  self.inAir = function(self) return self.jump > 0 or self.fall end
+
+  -- Polar position vars
+  self.pos = {ang = 0, dst = self.floor}
+  self.vel = {ang = 0, dst = 0}
+  
+  -- Collision circles
   self.topCircle = shapes.Circle(0,0,love.graphics.getWidth()/80)
   self.drawCircle = shapes.Circle(0,0,love.graphics.getWidth()/80)
   self.bottomCircle = shapes.Circle(0,0,love.graphics.getWidth()/80)
 
-  self.height = function(self) return self.pos.dst - self.floor end
-  self.inAir = function(self) return self.jump > 0 or self.fall end
-  
-  self.global = global
-  
   self.updateCircles = function(self)
     self.bottomCircle.x, self.bottomCircle.y = math.cartesian(self.pos, self.global.center)
     self.topCircle.x, self.topCircle.y = math.cartesian({dst = self.pos.dst + self.bottomCircle.r * 2, ang = self.pos.ang}, self.global.center)
@@ -35,10 +37,6 @@ function Player(global)
 
   -- Animation vars
   self.image = tileset.XMLTileset('gfx/player_tiles.xml')
-  --[[
-  self.width = self.image.tilewidth
-  self.height = self.image.tileheight
-  --]]
   self.animPos = 1
   self.animState = 0
   self.animDelay = 0
@@ -53,12 +51,14 @@ function Player(global)
     self.animState = 0
   end
 
-  -- Key Handler
-  self.keyhandle = {
-    left = {ang = -0.2, dst = 0},
-    right = {ang = 0.2, dst = 0}
-  }
+  -- Game state info
+  -- Percentage based health
+  self.health = 100
+  self.collected = 0
 
+  --
+  -- Standard update and delete functions 
+  --
   self.update = function(self, dt)
     -- Handle animation updating
 
@@ -67,7 +67,7 @@ function Player(global)
       self.fall         and self.image.anims.fall or
       self.vel.ang ~= 0 and self.image.anims.walk or
                             self.image.anims.stand,
-      self.vel.ang ~= 0 and self.vel.ang > 0 and 'right' or 'left'
+      self.vel.ang ~= 0 and (self.vel.ang > 0 and 'right' or 'left') or self.dir
     )
 
     if self.vel.ang ~= 0 then
@@ -94,6 +94,7 @@ function Player(global)
 
     if self:height() > 0 then
       self.fall = true
+      self.canJump = false
       for _,v in ipairs(global.asteroids.asteroids) do
         if shapes.Collides(v.circle, self.bottomCircle) then 
           self.canJump = true
@@ -119,16 +120,16 @@ function Player(global)
     self.pos.dst = self.pos.dst + self.vel.dst
 
     self:updateCircles()
-  end
-
-  self.collide = function(layer)
-
+    self.global.logger:update('Health', self.health)
   end
 
   self.draw = function(self, x, y)
     self.image:draw(self.drawCircle.x, self.drawCircle.y, self.animPos + self.animState, math.rad(utils.wrap(self.pos.ang + 90, 360)), 1, 1, self.drawCircle.r * 2, self.drawCircle.r * 2)
   end
 
+  --
+  -- Handle key presses
+  --
   self.keyhandle = function(self, keyhandle)
     if keyhandle:check('left') then
       self.vel.ang = self.vel.ang - (self:inAir() and 0.05 or 0.2)

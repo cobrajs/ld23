@@ -11,6 +11,8 @@ function KeyHandler()
 
   self.pressed = {}
   self.downtime = {}
+  self.pressHandle = {}
+  self.fromLast = {}
 
   self.keys = {}
   self.actions = {}
@@ -20,6 +22,8 @@ function KeyHandler()
     for _,v in ipairs(keys) do
       self.keys[v.key] = v.action
       self.pressed[v.key] = false
+      self.pressHandle[v.key] = false
+      self.fromLast[v.key] = 0
       self.downtime[v.key] = 0
       if type(self.actions[v.action]) == 'table' then
         table.insert(self.actions[v.action], v.key)
@@ -34,6 +38,7 @@ function KeyHandler()
   self.update = function(self, key, state)
     if self.pressed[key] ~= nil then 
       self.pressed[key] = state 
+      self.pressHandle[key] = state 
       self.downtime[key] = 0
     end
   end
@@ -52,6 +57,17 @@ function KeyHandler()
       return self.downtime[key]
     end
     return nil
+  end
+
+  self.handle = function(self, action)
+    local key = self:pressedKey(action)
+    if key then
+      if self.pressHandle[key] then
+        self.pressHandle[key] = false
+        return true
+      end
+    end
+    return false
   end
 
   self.reset = function(self, action)
