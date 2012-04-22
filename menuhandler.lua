@@ -5,7 +5,6 @@ module(..., package.seeall)
 -- I was going to do an XML menu reader, but I'd have to assign functions to it anyway
 --
 
-require 'loader'
 require 'utils'
 
 function MenuHandler(opts)

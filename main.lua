@@ -14,6 +14,7 @@ require 'asteroid'
 require 'shapes'
 require 'sun'
 require 'spacestation'
+require 'bullet'
 
 require 'logger'
 
@@ -39,6 +40,8 @@ function love.load()
 
   global.font = love.graphics.newFont('gfx/SPACEMAN.TTF', 24)
   love.graphics.setFont(global.font)
+
+  global.bullets = bullet.BulletHandler()
 
   global.asteroids = asteroid.AsteroidHandler(global.center, function(self, dt)
     if shapes.Collides(global.player.bottomCircle, self.circle) then
@@ -87,6 +90,7 @@ function love.load()
 
       global.sun:draw()
       global.spacestation:draw()
+      global.bullets:draw()
     end,
     update = function(self, dt)
       global.logger:update('Rot', math.floor(self.rotate))
@@ -102,6 +106,8 @@ function love.load()
 
       global.asteroids:update(dt)
 
+      -- Handle some debug keypresses
+
       if self.keyhandler:handle('spawn') then
         global.asteroids:addAsteroid()
         self.keyhandler:reset('spawn')
@@ -112,11 +118,23 @@ function love.load()
       end
 
       if self.keyhandler:handle('doflare') then
-        global.sun:doFlare()
+        global.sun:doFlare(global.bullets)
       end
 
+      -- Update other objects
       global.sun:update(dt)
       global.spacestation:update(dt)
+
+      -- Update bullets, run collisions
+      global.bullets:update(dt)
+      global.bullets:collide(global.earf)
+
+      local damage = 
+        ((global.bullets:collide(self.player.topCircle) or 0) +
+        (global.bullets:collide(self.player.bottomCircle) or 0)) * 20
+      if damage > 0 then self.player:damage(damage) end
+
+      global.logger:update('Bullets', #global.bullets.bullets)
     end
   })
 
@@ -139,12 +157,31 @@ function love.load()
     end
   })
 
+  screens:addScreen({
+    name = 'help',
+    draw = function(self)
+    end,
+    update = function(self, dt)
+    end
+  })
+
+  screens:addScreen({
+    name = 'credits',
+    draw = function(self)
+    end,
+    update = function(self, dt)
+    end
+  })
+
   global.menuhandler = menuhandler.MenuHandler({
     spacing = 24,
     pos = {x = 200, y = 200},
     font = global.font
   })
   global.menuhandler:addItem('Start', function(self) screens:switchScreen('game') end)
+  global.menuhandler:addItem('Options')
+  global.menuhandler:addItem('Help', function(self) screens:switchScreen('help') end)
+  global.menuhandler:addItem('Credits', function(self) screens:switchScreen('credits') end)
   global.menuhandler:addItem('Quit', function(self) love.event.push('quit') end)
   screens:addScreen(global.menuhandler.screen)
 

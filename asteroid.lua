@@ -4,6 +4,7 @@ require 'polar'
 require 'shapes'
 require 'tileset'
 require 'vector'
+require 'utils'
 
 function Asteroid(center)
   self = {}
@@ -30,10 +31,26 @@ function Asteroid(center)
 
   self.grounded = false
 
+  --[[
+  self.ps = love.graphics.newParticleSystem(utils.loadImage('dust.png'), 64)
+  self.ps:setLifetime(-1)
+  self.ps:setParticleLife(0.5)
+  self.ps:setDirection(math.rad(self.ang))
+  self.ps:setEmissionRate(16)
+  self.ps:setSpread(math.rad(90))
+  self.ps:setSpin(1)
+  self.ps:setSpinVariation(0.5)
+  self.ps:setSizeVariation(0.6)
+  self.ps:setPosition(x, y)
+  self.ps:setSpeed(1,3)
+  self.ps:start()
+  --]]
+
   self.circle = shapes.Circle(0, 0, love.graphics.getWidth() / 40)
 
   self.draw = function(self, images)
     --love.graphics.circle('fill', self.circle.x, self.circle.y, self.circle.r)
+    --love.graphics.draw(self.ps)
     images:draw(self.circle.x, self.circle.y, self.image, math.rad(utils.wrap(self.rot + self.ang, 360)), 1, 1, self.circle.r, self.circle.r)
   end
 
@@ -45,6 +62,9 @@ function Asteroid(center)
     if self.rotate then self.rot = utils.wrap(self.rot + 1, 360) end
 
     self:updateCircle()
+
+    --self.ps:setPosition(self.circle.x, self.circle.y)
+    --self.ps:update(dt)
   end
 
   self.updateCircle = function(self)

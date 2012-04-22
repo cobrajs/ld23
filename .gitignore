@@ -1,0 +1,10 @@
+# Vim stuff
+.*.swp
+*~
+
+# Screenshots
+*scrot*
+
+# Backups
+backup
+

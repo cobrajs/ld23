@@ -7,24 +7,27 @@ require 'orbiter'
 function Sun()
   self = orbiter.Orbiter()
 
-  self.offset = 20
+  self.offset = 0
 
-  self.color.g = 0
+  self.color.b = 0
   self.color:update()
 
   self.flare = false
   self.flareLength = 0
   self.flareFade = 0
+  self.flareBullets = nil
+  self.flareBulletType = 1
 
   self.speed = 0.3
   self.size = 40
 
   self:updateOrbit()
 
-  self.doFlare = function(self)
+  self.doFlare = function(self, bullets)
     self.flare = true
     self.flareLength = 1
     self.flareFade = self.flareFade + 1
+    self.flareBullets = bullets
   end
 
   self.updateCallback = function(self, dt)
@@ -34,6 +37,11 @@ function Sun()
         self.flareLength = 0
         self.flare = false
         self.flareFade = self.flareFade - 1
+      end
+      if self.flareFade == 97 then
+        for i=0,360,5 do 
+          self.flareBullets:add(self.pos.x, self.pos.y, i, 2)
+        end
       end
     end
 

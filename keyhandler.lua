@@ -4,7 +4,6 @@ assert(type(love) ~= nil, 'Love2D is required for this package')
 
 require 'xml'
 require 'utils'
-require 'loader'
 
 function KeyHandler()
   self = {}

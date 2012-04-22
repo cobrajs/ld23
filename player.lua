@@ -56,6 +56,13 @@ function Player(global)
   self.health = 100
   self.collected = 0
 
+  self.damage = function(self, amount)
+    self.health = self.health - amount
+    if self.health <= 0 then
+      print("LOOSE")
+    end
+  end
+
   --
   -- Standard update and delete functions 
   --
