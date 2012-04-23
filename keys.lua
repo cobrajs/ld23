@@ -31,3 +31,5 @@ addKey('spawn', 'n')
 addKey('spawn', 'return')
 addKey('uplevel', '=')
 addKey('downlevel', '-')
+
+return keys

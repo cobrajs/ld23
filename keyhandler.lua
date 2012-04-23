@@ -17,7 +17,8 @@ function KeyHandler()
   self.actions = {}
 
   self.load = function(self)
-    dofile 'keys.lua'
+    local chunk = love.filesystem.load('keys.lua')
+    local keys = chunk()
     for _,v in ipairs(keys) do
       self.keys[v.key] = v.action
       self.pressed[v.key] = false
