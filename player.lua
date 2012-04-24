@@ -98,6 +98,7 @@ function Player(global)
   self.hitsound = love.audio.newSource('sounds/ow.ogg')
   self.jumpsound = love.audio.newSource('sounds/jetpack.ogg')
   self.walksound = love.audio.newSource('sounds/walk.ogg')
+  self.walksound:setLooping(true)
   self.rescuesound = love.audio.newSource('sounds/rescue.ogg')
   self.punchsound = love.audio.newSource('sounds/punch.ogg')
 
@@ -105,6 +106,7 @@ function Player(global)
     self.healthDecTo = self.health - amount
     love.audio.play(self.hitsound)
     if self.healthDecTo <= 0 then
+      self.walksound:stop()
       global:lose()
     end
   end
@@ -258,7 +260,7 @@ function Player(global)
       self.health = self.health - (self.health - self.healthDecTo) / 10
     end
 
-    self.air = self.air - dt
+    self.air = self.air - dt * 3
 
     self.score = self.score + dt
 
@@ -335,9 +337,13 @@ function Player(global)
     self.vel.ang = utils.clamp(-2, self.vel.ang, 2)
 
     if math.abs(self.vel.ang) > 0 and not self:inAir() then
-      love.audio.play(self.walksound)
+      if self.walksound:isStopped() then
+        love.audio.play(self.walksound)
+      end
     else
-      love.audio.stop(self.walksound)
+      if not self.walksound:isStopped() then
+        love.audio.stop(self.walksound)
+      end
     end
 
     if keyhandle:check('jump') and self.canJump then
